@@ -29,6 +29,14 @@ def calc(num1, num2, operation="multiply"):
     elif operation == "modulo":
         return num1 % num2
 
+    elif operation == "int_divide":
+        if num2 == 0:
+            return "You can't divide by 0!"
+        return num1 // num2
+
+    elif operation == "power":
+        return num1 ** num2
+
 
 
 def data_type_conversion(value, target_type):
@@ -65,9 +73,15 @@ def grade(score1, score2, score3):
 
 
 def repeat(text, count):
-    pr1=text * count
-    print(pr1) 
-    return text * count
+    #pr1=text * count
+    #print(pr1) 
+    #return text * count
+    ret = ""
+
+    for i in range(count):
+        ret += text
+
+    return ret
 
 
 def student_scores(action, **kwargs):
