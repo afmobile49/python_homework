@@ -1,0 +1,4 @@
+I studied Python and learned how to work with files.
+I practiced using loops and input statements.
+I fixed a small error in my program.
+done for now
