@@ -1,20 +1,29 @@
 import traceback
 
+
 try:
-    with open("diary.txt", "a") as file:
+    with open("diary.txt", "a", encoding="utf-8") as diary_file:
         prompt = "What happened today? "
 
         while True:
             entry = input(prompt)
-            file.write(entry + "\n")
 
             if entry == "done for now":
                 break
 
+            diary_file.write(entry + "\n")
             prompt = "What else? "
 
-except Exception as e:
-    print("An exception occurred.")
-    print(f"Exception type: {type(e).__name__}")
-    print(f"Exception message: {e}")
-    traceback.print_exc()
+except Exception as error:
+    exception_name = type(error).__name__
+
+    print(f"{exception_name}: {error}")
+
+    traceback_details = traceback.extract_tb(error.__traceback__)
+
+    for detail in traceback_details:
+        print(
+            f'File "{detail.filename}", '
+            f"line {detail.lineno}, "
+            f"in {detail.name}"
+        )

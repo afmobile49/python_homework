@@ -1,4 +1,4 @@
-secret = "shazam!"
+secret = ""
 
 
 def set_secret(new_secret):
