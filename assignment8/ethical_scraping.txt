@@ -1,0 +1,10 @@
+Wikipedia robots.txt Review
+
+Restricted Sections:
+Wikipedia restricts several areas from web crawlers. Some examples include /w/, /api/, /trap/, and /wiki/Special:. It also restricts many sensitive Wikipedia pages such as deletion discussions, copyright-related pages, and administrative or arbitration pages.
+
+Specific User-Agent Rules:
+Yes, Wikipedia has special rules for some user-agents. For example, MJ12bot and Mediapartners-Google are completely blocked with "Disallow: /". SemrushBot is allowed but has a crawl delay of 5 seconds. Some bots, such as IsraBot and Orthogaffe, do not have specific restrictions.
+
+Ethical Scraping Reflection:
+robots.txt exists so website owners can communicate which areas automated crawlers should or should not access. Checking and respecting these rules helps prevent unnecessary server load and avoids accessing areas that the website owner has asked bots not to crawl. Following robots.txt is an important part of responsible and ethical web scraping because it respects the website's stated crawling preferences.
