@@ -7,4 +7,4 @@ Specific User-Agent Rules:
 Yes, Wikipedia has special rules for some user-agents. For example, MJ12bot and Mediapartners-Google are completely blocked with "Disallow: /". SemrushBot is allowed but has a crawl delay of 5 seconds. Some bots, such as IsraBot and Orthogaffe, do not have specific restrictions.
 
 Ethical Scraping Reflection:
-robots.txt helps website owners tell automated programs which parts of a site should or should not be accessed. Checking and respecting these rules is important because it reduces unnecessary load on the website and helps make web scraping more responsible and ethical.
+robots.txt exists so website owners can communicate which areas automated crawlers should or should not access. Checking and respecting these rules helps prevent unnecessary server load and avoids accessing areas that the website owner has asked bots not to crawl. Following robots.txt is an important part of responsible and ethical web scraping because it respects the website's stated crawling preferences.

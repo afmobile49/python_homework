@@ -4,12 +4,20 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 import pandas as pd
 import json
 
-from selenium.webdriver.support.ui import WebDriverWait
+
+# Exact tag/class values found during Task 2 browser inspection:
+# Search result: LI class="row cp-search-result-item"
+# Title: SPAN class="title-content"
+# Author: A class="author-link"
+# Format-Year parent: DIV class="cp-format-info"
+# Format-Year: SPAN class="display-info-primary"
 
 
+# Task 3 - Load the Durham County Library search page
 try:
     driver = webdriver.Chrome(
         service=ChromeService(ChromeDriverManager().install())
@@ -19,11 +27,17 @@ except Exception:
     print("Using Selenium Manager instead.")
     driver = webdriver.Chrome()
 
-url = "https://durhamcounty.bibliocommons.com/v2/search?query=learning%20spanish&searchType=smart"
+
+url = (
+    "https://durhamcounty.bibliocommons.com/v2/search"
+    "?query=learning%20spanish&searchType=smart"
+)
 
 driver.get(url)
 
-# Wait until all 20 search results on the first page are loaded
+
+# Task 3 - Find all book result elements using the exact
+# tag/class values identified in Task 2
 WebDriverWait(driver, 15).until(
     lambda d: len(
         d.find_elements(
@@ -40,9 +54,14 @@ book_entries = driver.find_elements(
 
 print("Number of results found:", len(book_entries))
 
+
+# Task 3 - Create the results list
 results = []
 
+
+# Task 3 - Extract title, authors, and format/year for each result
 for book in book_entries:
+
     title_element = book.find_element(
         By.CSS_SELECTOR,
         "span.title-content"
@@ -53,6 +72,7 @@ for book in book_entries:
         By.CSS_SELECTOR,
         "a.author-link"
     )
+
     authors = []
 
     for author in author_elements:
@@ -69,6 +89,7 @@ for book in book_entries:
         By.CSS_SELECTOR,
         "span.display-info-primary"
     )
+
     format_year = format_year_element.text
 
     book_data = {
@@ -80,19 +101,37 @@ for book in book_entries:
     results.append(book_data)
 
 
+# Task 3 - Create and print the DataFrame
 books_df = pd.DataFrame(results)
 
 print(books_df)
 
-# Task 4: Write the scraped data to CSV and JSON files
 
-books_df.to_csv("get_books.csv", index=False)
+# Task 4 - Write the DataFrame to CSV
+books_df.to_csv(
+    "get_books.csv",
+    index=False
+)
 
-with open("get_books.json", "w", encoding="utf-8") as json_file:
-    json.dump(results, json_file, indent=4, ensure_ascii=False)
+
+# Task 4 - Write the results list to JSON
+with open(
+    "get_books.json",
+    "w",
+    encoding="utf-8"
+) as json_file:
+
+    json.dump(
+        results,
+        json_file,
+        indent=4,
+        ensure_ascii=False
+    )
+
 
 print("\nFiles created:")
 print("get_books.csv")
 print("get_books.json")
+
 
 driver.quit()

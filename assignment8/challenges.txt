@@ -2,4 +2,4 @@ Challenges and Solutions
 
 One challenge was that WebDriver Manager could not download the Chrome driver because the network connection was being reset. I solved this by using Selenium Manager with webdriver.Chrome(), which was able to start Chrome successfully.
 
-Another challenge was finding the current OWASP Top 10 links. The main OWASP project page did not directly show the A01-A10 links in the structure I expected, so I opened the current OWASP Top 10 2025 page and inspected the page structure. I then used XPath to find the ten vulnerability links and extract their titles and URLs.
+Another challenge was that the OWASP project page specified in the assignment no longer directly displays the A01-A10 vulnerability links. It now links to the current OWASP Top Ten 2025 release page. I kept the assignment's required URL as the starting page, used Selenium and XPath to find the current release link, followed that link, and then extracted the ten vulnerability titles and URLs.
