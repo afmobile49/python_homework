@@ -27,13 +27,28 @@ def add_magazine(cursor, name, publisher_name):
         publisher_id = result[0]
 
         cursor.execute(
-            "INSERT INTO magazines (name, publisher_id) VALUES (?, ?)",
+            """
+            SELECT magazine_id
+            FROM magazines
+            WHERE name = ? AND publisher_id = ?
+            """,
             (name, publisher_id)
         )
+
+        if cursor.fetchone() is not None:
+            print(f"Magazine already exists: {name}")
+            return
+
+        cursor.execute(
+            """
+            INSERT INTO magazines (name, publisher_id)
+            VALUES (?, ?)
+            """,
+            (name, publisher_id)
+        )
+
         print(f"Magazine added: {name}")
 
-    except sqlite3.IntegrityError:
-        print(f"Magazine already exists: {name}")
     except sqlite3.Error as e:
         print(f"Error adding magazine: {e}")
 
@@ -57,6 +72,7 @@ def add_subscriber(cursor, name, address):
             "INSERT INTO subscribers (name, address) VALUES (?, ?)",
             (name, address)
         )
+
         print(f"Subscriber added: {name}")
 
     except sqlite3.Error as e:
@@ -79,6 +95,7 @@ def add_subscription(
             """,
             (subscriber_name, subscriber_address)
         )
+
         subscriber = cursor.fetchone()
 
         if subscriber is None:
@@ -88,9 +105,14 @@ def add_subscription(
         subscriber_id = subscriber[0]
 
         cursor.execute(
-            "SELECT magazine_id FROM magazines WHERE name = ?",
+            """
+            SELECT magazine_id
+            FROM magazines
+            WHERE name = ?
+            """,
             (magazine_name,)
         )
+
         magazine = cursor.fetchone()
 
         if magazine is None:
@@ -133,10 +155,10 @@ def add_subscription(
         print(f"Error adding subscription: {e}")
 
 
-
 def run_queries(cursor):
     print("\n--- All Subscribers ---")
     cursor.execute("SELECT * FROM subscribers")
+
     for row in cursor.fetchall():
         print(row)
 
@@ -144,10 +166,14 @@ def run_queries(cursor):
     cursor.execute(
         "SELECT * FROM magazines ORDER BY name"
     )
+
     for row in cursor.fetchall():
         print(row)
 
-    print("\n--- Magazines Published by Condé Nast ---")
+    publisher_name = "Condé Nast"
+
+    print(f"\n--- Magazines Published by {publisher_name} ---")
+
     cursor.execute(
         """
         SELECT m.magazine_id, m.name, p.name
@@ -157,11 +183,12 @@ def run_queries(cursor):
         WHERE p.name = ?
         ORDER BY m.name
         """,
-        ("Condé Nast",)
+        (publisher_name,)
     )
 
     for row in cursor.fetchall():
         print(row)
+
 
 try:
     conn = sqlite3.connect("../db/magazines.db")
@@ -171,52 +198,61 @@ try:
     print("Database created and connected successfully.")
 
     try:
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS publishers (
-            publisher_id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS publishers (
+                publisher_id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE
+            )
+            """
         )
-        """)
     except sqlite3.Error as e:
         print(f"Error creating publishers table: {e}")
 
     try:
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS magazines (
-            magazine_id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            publisher_id INTEGER NOT NULL,
-            FOREIGN KEY (publisher_id)
-                REFERENCES publishers (publisher_id)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS magazines (
+                magazine_id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                publisher_id INTEGER NOT NULL,
+                FOREIGN KEY (publisher_id)
+                    REFERENCES publishers (publisher_id)
+            )
+            """
         )
-        """)
     except sqlite3.Error as e:
         print(f"Error creating magazines table: {e}")
 
     try:
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS subscribers (
-            subscriber_id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            address TEXT NOT NULL
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS subscribers (
+                subscriber_id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                address TEXT NOT NULL
+            )
+            """
         )
-        """)
     except sqlite3.Error as e:
         print(f"Error creating subscribers table: {e}")
 
     try:
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS subscriptions (
-            subscription_id INTEGER PRIMARY KEY,
-            subscriber_id INTEGER NOT NULL,
-            magazine_id INTEGER NOT NULL,
-            expiration_date TEXT NOT NULL,
-            FOREIGN KEY (subscriber_id)
-                REFERENCES subscribers (subscriber_id),
-            FOREIGN KEY (magazine_id)
-                REFERENCES magazines (magazine_id)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                subscription_id INTEGER PRIMARY KEY,
+                subscriber_id INTEGER NOT NULL,
+                magazine_id INTEGER NOT NULL,
+                expiration_date TEXT NOT NULL,
+                UNIQUE (subscriber_id, magazine_id),
+                FOREIGN KEY (subscriber_id)
+                    REFERENCES subscribers (subscriber_id),
+                FOREIGN KEY (magazine_id)
+                    REFERENCES magazines (magazine_id)
+            )
+            """
         )
-        """)
     except sqlite3.Error as e:
         print(f"Error creating subscriptions table: {e}")
 
@@ -228,8 +264,18 @@ try:
     add_publisher(cursor, "National Geographic Partners")
 
     # Add magazines
-    add_magazine(cursor, "The New Yorker", "Condé Nast")
-    add_magazine(cursor, "Cosmopolitan", "Hearst Communications")
+    add_magazine(
+        cursor,
+        "The New Yorker",
+        "Condé Nast"
+    )
+
+    add_magazine(
+        cursor,
+        "Cosmopolitan",
+        "Hearst Communications"
+    )
+
     add_magazine(
         cursor,
         "National Geographic",
@@ -237,9 +283,23 @@ try:
     )
 
     # Add subscribers
-    add_subscriber(cursor, "Alice Johnson", "100 Main Street")
-    add_subscriber(cursor, "Bob Smith", "200 Oak Avenue")
-    add_subscriber(cursor, "Carol Davis", "300 Pine Road")
+    add_subscriber(
+        cursor,
+        "Alice Johnson",
+        "100 Main Street"
+    )
+
+    add_subscriber(
+        cursor,
+        "Bob Smith",
+        "200 Oak Avenue"
+    )
+
+    add_subscriber(
+        cursor,
+        "Carol Davis",
+        "300 Pine Road"
+    )
 
     # Add subscriptions
     add_subscription(
@@ -270,8 +330,6 @@ try:
     print("Data committed successfully.")
 
     run_queries(cursor)
-
-
 
 except sqlite3.Error as e:
     print(f"Database error: {e}")

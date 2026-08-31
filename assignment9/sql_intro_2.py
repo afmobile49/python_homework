@@ -1,5 +1,11 @@
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
+
+
+assignment_dir = Path(__file__).resolve().parent
+output_file = assignment_dir / "order_summary.csv"
 
 
 try:
@@ -44,9 +50,9 @@ try:
         print("\n--- Product Summary Sorted by Name ---")
         print(summary_df.head())
 
-        summary_df.to_csv("order_summary.csv", index=False)
+        summary_df.to_csv(output_file, index=False)
 
-        print("\norder_summary.csv created successfully.")
+        print(f"\n{output_file} created successfully.")
 
 except sqlite3.Error as e:
     print(f"Database error: {e}")
