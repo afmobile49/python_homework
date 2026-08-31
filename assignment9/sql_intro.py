@@ -4,35 +4,61 @@ import sqlite3
 def add_publisher(cursor, name):
     try:
         cursor.execute(
-            "INSERT INTO publishers (name) VALUES (?)",
+            """
+            SELECT publisher_id
+            FROM publishers
+            WHERE name = ?
+            """,
             (name,)
         )
+
+        if cursor.fetchone() is not None:
+            print(f"Publisher already exists: {name}")
+            return
+
+        cursor.execute(
+            """
+            INSERT INTO publishers (name)
+            VALUES (?)
+            """,
+            (name,)
+        )
+
         print(f"Publisher added: {name}")
-    except sqlite3.IntegrityError:
-        print(f"Publisher already exists: {name}")
+
+    except sqlite3.Error as e:
+        print(f"Error adding publisher: {e}")
 
 
 def add_magazine(cursor, name, publisher_name):
     try:
+        # Find the publisher first.
         cursor.execute(
-            "SELECT publisher_id FROM publishers WHERE name = ?",
+            """
+            SELECT publisher_id
+            FROM publishers
+            WHERE name = ?
+            """,
             (publisher_name,)
         )
-        result = cursor.fetchone()
 
-        if result is None:
+        publisher = cursor.fetchone()
+
+        if publisher is None:
             print(f"Publisher not found: {publisher_name}")
             return
 
-        publisher_id = result[0]
+        publisher_id = publisher[0]
 
+        # Magazine names are globally unique in the schema,
+        # so duplicate checking is based on the magazine name.
         cursor.execute(
             """
             SELECT magazine_id
             FROM magazines
-            WHERE name = ? AND publisher_id = ?
+            WHERE name = ?
             """,
-            (name, publisher_id)
+            (name,)
         )
 
         if cursor.fetchone() is not None:
@@ -55,6 +81,8 @@ def add_magazine(cursor, name, publisher_name):
 
 def add_subscriber(cursor, name, address):
     try:
+        # A subscriber is considered a duplicate when both
+        # the name and address already exist.
         cursor.execute(
             """
             SELECT subscriber_id
@@ -69,7 +97,10 @@ def add_subscriber(cursor, name, address):
             return
 
         cursor.execute(
-            "INSERT INTO subscribers (name, address) VALUES (?, ?)",
+            """
+            INSERT INTO subscribers (name, address)
+            VALUES (?, ?)
+            """,
             (name, address)
         )
 
@@ -87,6 +118,7 @@ def add_subscription(
     expiration_date
 ):
     try:
+        # Find the subscriber using both required subscriber fields.
         cursor.execute(
             """
             SELECT subscriber_id
@@ -99,11 +131,15 @@ def add_subscription(
         subscriber = cursor.fetchone()
 
         if subscriber is None:
-            print(f"Subscriber not found: {subscriber_name}")
+            print(
+                f"Subscriber not found: "
+                f"{subscriber_name}, {subscriber_address}"
+            )
             return
 
         subscriber_id = subscriber[0]
 
+        # Find the magazine by its globally unique name.
         cursor.execute(
             """
             SELECT magazine_id
@@ -121,6 +157,7 @@ def add_subscription(
 
         magazine_id = magazine[0]
 
+        # Prevent duplicate subscriber/magazine relationships.
         cursor.execute(
             """
             SELECT subscription_id
@@ -139,11 +176,18 @@ def add_subscription(
 
         cursor.execute(
             """
-            INSERT INTO subscriptions
-            (subscriber_id, magazine_id, expiration_date)
+            INSERT INTO subscriptions (
+                subscriber_id,
+                magazine_id,
+                expiration_date
+            )
             VALUES (?, ?, ?)
             """,
-            (subscriber_id, magazine_id, expiration_date)
+            (
+                subscriber_id,
+                magazine_id,
+                expiration_date
+            )
         )
 
         print(
@@ -157,26 +201,44 @@ def add_subscription(
 
 def run_queries(cursor):
     print("\n--- All Subscribers ---")
-    cursor.execute("SELECT * FROM subscribers")
 
-    for row in cursor.fetchall():
-        print(row)
-
-    print("\n--- Magazines Sorted by Name ---")
     cursor.execute(
-        "SELECT * FROM magazines ORDER BY name"
+        """
+        SELECT subscriber_id, name, address
+        FROM subscribers
+        """
     )
 
     for row in cursor.fetchall():
         print(row)
 
-    publisher_name = "Condé Nast"
-
-    print(f"\n--- Magazines Published by {publisher_name} ---")
+    print("\n--- Magazines Sorted by Name ---")
 
     cursor.execute(
         """
-        SELECT m.magazine_id, m.name, p.name
+        SELECT magazine_id, name, publisher_id
+        FROM magazines
+        ORDER BY name
+        """
+    )
+
+    for row in cursor.fetchall():
+        print(row)
+
+    # Clearly choose one of the publishers created above.
+    publisher_name = "Condé Nast"
+
+    print(
+        f"\n--- Magazines Published by "
+        f"{publisher_name} ---"
+    )
+
+    cursor.execute(
+        """
+        SELECT
+            m.magazine_id,
+            m.name,
+            p.name
         FROM magazines AS m
         JOIN publishers AS p
             ON m.publisher_id = p.publisher_id
@@ -192,7 +254,10 @@ def run_queries(cursor):
 
 try:
     conn = sqlite3.connect("../db/magazines.db")
+
+    # SQLite does not enforce foreign keys unless this is enabled.
     conn.execute("PRAGMA foreign_keys = 1")
+
     cursor = conn.cursor()
 
     print("Database created and connected successfully.")
@@ -230,7 +295,8 @@ try:
             CREATE TABLE IF NOT EXISTS subscribers (
                 subscriber_id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                address TEXT NOT NULL
+                address TEXT NOT NULL,
+                UNIQUE (name, address)
             )
             """
         )
@@ -258,12 +324,23 @@ try:
 
     print("Tables created successfully.")
 
-    # Add publishers
-    add_publisher(cursor, "Condé Nast")
-    add_publisher(cursor, "Hearst Communications")
-    add_publisher(cursor, "National Geographic Partners")
+    # Add at least three publishers.
+    add_publisher(
+        cursor,
+        "Condé Nast"
+    )
 
-    # Add magazines
+    add_publisher(
+        cursor,
+        "Hearst Communications"
+    )
+
+    add_publisher(
+        cursor,
+        "National Geographic Partners"
+    )
+
+    # Add at least three magazines.
     add_magazine(
         cursor,
         "The New Yorker",
@@ -282,7 +359,7 @@ try:
         "National Geographic Partners"
     )
 
-    # Add subscribers
+    # Add at least three subscribers.
     add_subscriber(
         cursor,
         "Alice Johnson",
@@ -301,7 +378,7 @@ try:
         "300 Pine Road"
     )
 
-    # Add subscriptions
+    # Add at least three subscriptions.
     add_subscription(
         cursor,
         "Alice Johnson",
@@ -327,6 +404,7 @@ try:
     )
 
     conn.commit()
+
     print("Data committed successfully.")
 
     run_queries(cursor)
